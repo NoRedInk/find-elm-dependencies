@@ -4,7 +4,7 @@ var _ = require("lodash");
 var fs = require("fs");
 var path = require("path");
 var firstline = require("firstline");
-var depsLoader = require('./dependencies.js');
+var depsLoader = require('./src/dependencies.js');
 
 
 function getBaseDir(file) {
