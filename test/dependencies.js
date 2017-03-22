@@ -56,4 +56,12 @@ describe("#findAllDependencies", function() {
       );
     });
   });
+
+  it("works for a file with dependencies stored in another source directory", function () {
+    return findAllDependencies(prependFixturesDir("ParentWithOtherSrcDeps.elm")).then(function(results) {
+      expect(results).to.deep.equal(
+        [ "other-src/OtherChild.elm" ].map(prependFixturesDir)
+      );
+    });
+  });
 });
