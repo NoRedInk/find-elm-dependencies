@@ -154,19 +154,7 @@ function findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles) {
     }).catch(reject);
   });
 }
-function handleError(pathToMake, err) {
-  if (err.code === "ENOENT") {
-    console.error("Could not find Elm compiler \"" + pathToMake + "\". Is it installed?")
-  } else if (err.code === "EACCES") {
-    console.error("Elm compiler \"" + pathToMake + "\" did not have permission to run. Do you need to give it executable permissions?");
-  } else {
-    console.error("Error attempting to run Elm compiler \"" + pathToMake + "\":\n" + err);
-  }
-}
 
-function escapePath(pathStr) {
-  return pathStr.replace(/ /g, "\\ ");
-}
 module.exports = {
   findAllDependencies: findAllDependencies
 };
