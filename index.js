@@ -61,8 +61,7 @@ function findAllDependencies(file, knownDependencies, sourceDirectories, knownFi
     });
   } else {
     return getBaseDir(file)
-      .then(findElmPackage)
-      .then(getSourceDirectories)
+      .then(getElmPackageSourceDirectories)
       .then(function(newSourceDirs) {
         return findAllDependenciesHelp(file, knownDependencies, newSourceDirs, knownFiles).then(function(thing){
           return thing.knownDependencies;
@@ -72,22 +71,25 @@ function findAllDependencies(file, knownDependencies, sourceDirectories, knownFi
 }
 
 // Given a source directory (containing top-level Elm modules), locate the
-// elm-package.json file that includes it.
-function findElmPackage(baseDir, currentDir) {
+// elm-package.json file that includes it and get all its source directories.
+function getElmPackageSourceDirectories(baseDir, currentDir) {
   if (typeof currentDir === "undefined") {
     currentDir = baseDir;
   }
 
   var elmPackagePath = path.join(currentDir, 'elm-package.json');
   if (fs.existsSync(elmPackagePath)) {
-    return elmPackagePath;
+    var sourceDirectories = getSourceDirectories(elmPackagePath);
+    if (_.includes(sourceDirectories, baseDir)) {
+      return sourceDirectories;
+    }
   }
 
   if (isRoot(currentDir)) {
     return false;
   }
 
-  return findElmPackage(baseDir, path.dirname(currentDir));
+  return getElmPackageSourceDirectories(baseDir, path.dirname(currentDir));
 }
 
 function isRoot(dir) {
