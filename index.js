@@ -44,7 +44,7 @@ function getBaseDir(file) {
 
 // Returns a Promise that returns a flat list of all the Elm files the given
 // Elm file depends on, based on the modules it loads via `import`.
-function findAllDependencies(file, knownDependencies, baseDir, knownFiles) {
+function findAllDependencies(file, knownDependencies, sourceDirectories, knownFiles) {
   if (!knownDependencies) {
     knownDependencies = [];
   }
@@ -55,21 +55,56 @@ function findAllDependencies(file, knownDependencies, baseDir, knownFiles) {
     return knownDependencies;
   }
 
-  if (baseDir) {
-    return findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles).then(function(thing){
+  if (sourceDirectories) {
+    return findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles).then(function(thing){
       return thing.knownDependencies;
     });
   } else {
-    return getBaseDir(file).then(function(newBaseDir) {
-      return findAllDependenciesHelp(file, knownDependencies, newBaseDir, knownFiles).then(function(thing){
-        return thing.knownDependencies;
+    return getBaseDir(file)
+      .then(getElmPackageSourceDirectories)
+      .then(function(newSourceDirs) {
+        return findAllDependenciesHelp(file, knownDependencies, newSourceDirs, knownFiles).then(function(thing){
+          return thing.knownDependencies;
+        });
       });
-    })
   }
 }
 
+// Given a source directory (containing top-level Elm modules), locate the
+// elm-package.json file that includes it and get all its source directories.
+function getElmPackageSourceDirectories(baseDir, currentDir) {
+  if (typeof currentDir === "undefined") {
+    currentDir = baseDir = path.resolve(baseDir);
+  }
 
-function findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles) {
+  var elmPackagePath = path.join(currentDir, 'elm-package.json');
+  if (fs.existsSync(elmPackagePath)) {
+    var sourceDirectories = getSourceDirectories(elmPackagePath);
+    if (_.includes(sourceDirectories, baseDir)) {
+      return sourceDirectories;
+    }
+  }
+
+  if (isRoot(currentDir)) {
+    return false;
+  }
+
+  return getElmPackageSourceDirectories(baseDir, path.dirname(currentDir));
+}
+
+function isRoot(dir) {
+  var parsedPath = path.parse(dir);
+  return parsedPath.root === parsedPath.dir;
+}
+
+function getSourceDirectories(elmPackagePath) {
+  var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
+  return elmPackage['source-directories'].map(function(sourceDir) {
+    return path.resolve(path.dirname(elmPackagePath), sourceDir);
+  });
+}
+
+function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles) {
   return new Promise(function(resolve, reject) {
     // if we already know the file, return known deps since we won't learn anything
     if (knownFiles.indexOf(file) !== -1){
@@ -113,7 +148,14 @@ function findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles) {
           }
 
           // e.g. ~/code/elm-css/src/Css/Declarations.elm
-          var result = path.join(baseDir, dependencyLogicalName + extension);
+          var result = null;
+          _.find(sourceDirectories, function(sourceDir) {
+            var absPath = path.join(sourceDir, dependencyLogicalName + extension);
+            if (fs.existsSync(absPath)) {
+              result = absPath;
+              return true;
+            }
+          });
 
           return _.includes(knownDependencies, result) ? null : result;
 
@@ -125,24 +167,24 @@ function findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles) {
         var newDependencies = knownDependencies.concat(validDependencies);
         var recursePromises = _.compact(validDependencies.map(function(dependency) {
           return path.extname(dependency) === ".elm" ?
-            findAllDependenciesHelp(dependency, newDependencies, baseDir, knownFiles) : null;
+            findAllDependenciesHelp(dependency, newDependencies, sourceDirectories, knownFiles) : null;
         }));
 
         Promise.all(recursePromises).then(function(extraDependencies) {
           // keep track of files that weren't found in our src directory
-          var externalPackageFiles = [];
+          var packagesInError = [];
 
           var justDeps = extraDependencies.map(function(thing){
             // if we had an error, we flag the file as a bad thing
             if (thing.error){
-              externalPackageFiles.push(thing.file)
+              packagesInError.push(thing.file)
               return [];
             }
             return thing.knownDependencies;
           });
 
           var flat = _.uniq(_.flatten(knownDependencies.concat(justDeps))).filter(function(file){
-            return externalPackageFiles.indexOf(file) === -1;
+            return packagesInError.indexOf(file) === -1;
           });
 
           resolve({
@@ -154,19 +196,7 @@ function findAllDependenciesHelp(file, knownDependencies, baseDir, knownFiles) {
     }).catch(reject);
   });
 }
-function handleError(pathToMake, err) {
-  if (err.code === "ENOENT") {
-    console.error("Could not find Elm compiler \"" + pathToMake + "\". Is it installed?")
-  } else if (err.code === "EACCES") {
-    console.error("Elm compiler \"" + pathToMake + "\" did not have permission to run. Do you need to give it executable permissions?");
-  } else {
-    console.error("Error attempting to run Elm compiler \"" + pathToMake + "\":\n" + err);
-  }
-}
 
-function escapePath(pathStr) {
-  return pathStr.replace(/ /g, "\\ ");
-}
 module.exports = {
   findAllDependencies: findAllDependencies
 };

@@ -4,8 +4,7 @@
     "repository": "https://github.com/foo/bar.git",
     "license": "BSD3",
     "source-directories": [
-        ".",
-        "other-src"
+        "bad-directory-does-not-exist"
     ],
     "native-modules": true,
     "exposed-modules": [],
