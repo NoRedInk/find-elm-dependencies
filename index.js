@@ -74,7 +74,8 @@ function findAllDependencies(file, knownDependencies, sourceDirectories, knownFi
 // elm-package.json file that includes it and get all its source directories.
 function getElmPackageSourceDirectories(baseDir, currentDir) {
   if (typeof currentDir === "undefined") {
-    currentDir = baseDir = path.resolve(baseDir);
+    baseDir = path.resolve(baseDir);
+    currentDir = baseDir;
   }
 
   var elmPackagePath = path.join(currentDir, 'elm-package.json');
