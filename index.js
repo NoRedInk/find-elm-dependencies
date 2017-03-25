@@ -87,7 +87,7 @@ function getElmPackageSourceDirectories(baseDir, currentDir) {
   }
 
   if (isRoot(currentDir)) {
-    return false;
+    return [];
   }
 
   return getElmPackageSourceDirectories(baseDir, path.dirname(currentDir));
