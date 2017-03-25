@@ -65,8 +65,8 @@ describe("#findAllDependencies", function() {
     });
   });
 
-  it('ignores an elm-package.json file that does not list the module’s source directory', function() {
-    return findAllDependencies(prependFixturesDir('other-src/OtherParent.elm')).then(function(results) {
+  it("ignores an elm-package.json file that does not list the module's source directory", function() {
+    return findAllDependencies(prependFixturesDir("other-src/OtherParent.elm")).then(function(results) {
       expect(results).to.deep.equal(
         [ "Test/ChildA.elm" ].map(prependFixturesDir)
       );
