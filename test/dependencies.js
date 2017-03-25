@@ -72,4 +72,10 @@ describe("#findAllDependencies", function() {
       );
     });
   });
+
+  it("gracefully ignores malformed elm-package.json files", function() {
+    return findAllDependencies(prependFixturesDir("malformed-elm-package-json/Main.elm")).then(function(results) {
+      expect(results).to.deep.equal([]);
+    })
+  });
 });

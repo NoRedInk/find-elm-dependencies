@@ -99,7 +99,13 @@ function isRoot(dir) {
 }
 
 function getSourceDirectories(elmPackagePath) {
-  var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
+  try {
+    var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
+  } catch (e) {
+    console.warn('Ignored malformed package metadata JSON file: ' + elmPackagePath);
+    return [];
+  }
+
   return elmPackage['source-directories'].map(function(sourceDir) {
     return path.resolve(path.dirname(elmPackagePath), sourceDir);
   });
