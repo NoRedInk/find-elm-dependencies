@@ -155,17 +155,17 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
           }
 
           // e.g. ~/code/elm-css/src/Css/Declarations.elm
-          var result = null;
-          _.find(sourceDirectories, function(sourceDir) {
+          var dependencySourceDir = _.find(sourceDirectories, function(sourceDir) {
             var absPath = path.join(sourceDir, dependencyLogicalName + extension);
-            if (fs.existsSync(absPath)) {
-              result = absPath;
-              return true;
-            }
+            return fs.existsSync(absPath);
           });
 
-          return _.includes(knownDependencies, result) ? null : result;
+          if (!dependencySourceDir) {
+            return null;
+          }
 
+          var newImport = path.join(dependencySourceDir, dependencyLogicalName + extension);
+          return _.includes(knownDependencies, newImport) ? null : newImport;
         }));
 
         knownFiles.push(file);
