@@ -65,11 +65,23 @@ describe("#findAllDependencies", function() {
     });
   });
 
-  it('ignores an elm-package.json file that does not list the module’s source directory', function() {
-    return findAllDependencies(prependFixturesDir('other-src/OtherParent.elm')).then(function(results) {
+  it("ignores an elm-package.json file that does not list the module's source directory", function() {
+    return findAllDependencies(prependFixturesDir("other-src/OtherParent.elm")).then(function(results) {
       expect(results).to.deep.equal(
         [ "Test/ChildA.elm" ].map(prependFixturesDir)
       );
     });
+  });
+
+  it("ignores an elm-package.json file missing the source-directories key", function() {
+    return findAllDependencies(prependFixturesDir("no-source-directories-elm-package-json/Main.elm")).then(function(results) {
+      expect(results).to.deep.equal([]);
+    });
+  });
+
+  it("gracefully ignores malformed elm-package.json files", function() {
+    return findAllDependencies(prependFixturesDir("malformed-elm-package-json/Main.elm")).then(function(results) {
+      expect(results).to.deep.equal([]);
+    })
   });
 });

@@ -74,7 +74,8 @@ function findAllDependencies(file, knownDependencies, sourceDirectories, knownFi
 // elm-package.json file that includes it and get all its source directories.
 function getElmPackageSourceDirectories(baseDir, currentDir) {
   if (typeof currentDir === "undefined") {
-    currentDir = baseDir = path.resolve(baseDir);
+    baseDir = path.resolve(baseDir);
+    currentDir = baseDir;
   }
 
   var elmPackagePath = path.join(currentDir, 'elm-package.json');
@@ -86,7 +87,7 @@ function getElmPackageSourceDirectories(baseDir, currentDir) {
   }
 
   if (isRoot(currentDir)) {
-    return false;
+    return [];
   }
 
   return getElmPackageSourceDirectories(baseDir, path.dirname(currentDir));
@@ -98,8 +99,20 @@ function isRoot(dir) {
 }
 
 function getSourceDirectories(elmPackagePath) {
-  var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
-  return elmPackage['source-directories'].map(function(sourceDir) {
+  try {
+    var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
+  } catch (e) {
+    console.warn('Ignored malformed package metadata JSON file: ' + elmPackagePath);
+    return [];
+  }
+
+  var sourceDirectories = elmPackage['source-directories'];
+  if (!Array.isArray(sourceDirectories)) {
+    console.warn('Ignored package metadata JSON file with missing/invalid source-directories: ' + elmPackagePath);
+    return [];
+  }
+
+  return sourceDirectories.map(function(sourceDir) {
     return path.resolve(path.dirname(elmPackagePath), sourceDir);
   });
 }
@@ -148,17 +161,17 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
           }
 
           // e.g. ~/code/elm-css/src/Css/Declarations.elm
-          var result = null;
-          _.find(sourceDirectories, function(sourceDir) {
+          var dependencySourceDir = _.find(sourceDirectories, function(sourceDir) {
             var absPath = path.join(sourceDir, dependencyLogicalName + extension);
-            if (fs.existsSync(absPath)) {
-              result = absPath;
-              return true;
-            }
+            return fs.existsSync(absPath);
           });
 
-          return _.includes(knownDependencies, result) ? null : result;
+          if (!dependencySourceDir) {
+            return null;
+          }
 
+          var newImport = path.join(dependencySourceDir, dependencyLogicalName + extension);
+          return _.includes(knownDependencies, newImport) ? null : newImport;
         }));
 
         knownFiles.push(file);
