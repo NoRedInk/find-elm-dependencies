@@ -106,7 +106,13 @@ function getSourceDirectories(elmPackagePath) {
     return [];
   }
 
-  return elmPackage['source-directories'].map(function(sourceDir) {
+  var sourceDirectories = elmPackage['source-directories'];
+  if (!Array.isArray(sourceDirectories)) {
+    console.warn('Ignored package metadata JSON file with missing/invalid source-directories: ' + elmPackagePath);
+    return [];
+  }
+
+  return sourceDirectories.map(function(sourceDir) {
     return path.resolve(path.dirname(elmPackagePath), sourceDir);
   });
 }
