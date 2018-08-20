@@ -34,10 +34,10 @@
   "homepage": "https://github.com/noredink/find-elm-dependencies",
   "dependencies": {
     "firstline": "1.2.0",
-    "lodash": "4.14.2"
+    "lodash": "4.17.10"
   },
   "devDependencies": {
     "chai": "3.5.0",
-    "mocha": "3.0.2"
+    "mocha": "5.2.0"
   }
 }
