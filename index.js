@@ -71,14 +71,14 @@ function findAllDependencies(file, knownDependencies, sourceDirectories, knownFi
 }
 
 // Given a source directory (containing top-level Elm modules), locate the
-// elm-package.json file that includes it and get all its source directories.
+// elm.json file that includes it and get all its source directories.
 function getElmPackageSourceDirectories(baseDir, currentDir) {
   if (typeof currentDir === "undefined") {
     baseDir = path.resolve(baseDir);
     currentDir = baseDir;
   }
 
-  var elmPackagePath = path.join(currentDir, 'elm-package.json');
+  var elmPackagePath = path.join(currentDir, 'elm.json');
   if (fs.existsSync(elmPackagePath)) {
     var sourceDirectories = getSourceDirectories(elmPackagePath);
     if (_.includes(sourceDirectories, baseDir)) {
