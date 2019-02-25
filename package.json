@@ -1,6 +1,6 @@
 {
   "name": "find-elm-dependencies",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Find elm dependencies",
   "main": "index.js",
   "scripts": {
