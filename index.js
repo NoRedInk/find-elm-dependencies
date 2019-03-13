@@ -37,7 +37,7 @@ function getBaseDir(file) {
         return resolve(path.dirname(file));
       }
 
-      return reject(file + " is not a syntactically valid Elm module. Try running elm-make on it manually to figure out what the problem is.");
+      return reject(file + " is not a syntactically valid Elm module. Try running `elm make` on it manually to figure out what the problem is.");
     });
   });
 }
