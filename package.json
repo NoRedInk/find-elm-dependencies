@@ -4,7 +4,9 @@
   "description": "Find elm dependencies",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/*.js"
+    "test": "mocha test/*.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "directories": {
     "test": "tests",
@@ -34,10 +36,12 @@
   "homepage": "https://github.com/noredink/find-elm-dependencies",
   "dependencies": {
     "firstline": "1.2.0",
-    "lodash": "4.17.11"
+    "lodash": "4.17.11",
+    "snyk": "^1.192.0"
   },
   "devDependencies": {
     "chai": "3.5.0",
     "mocha": "5.2.0"
-  }
+  },
+  "snyk": true
 }
