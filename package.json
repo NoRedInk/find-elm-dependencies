@@ -34,7 +34,7 @@
   "homepage": "https://github.com/noredink/find-elm-dependencies",
   "dependencies": {
     "firstline": "1.2.0",
-    "lodash": "4.17.11"
+    "lodash": "^4.17.13"
   },
   "devDependencies": {
     "chai": "3.5.0",
