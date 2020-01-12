@@ -3,43 +3,87 @@
 var _ = require("lodash");
 var fs = require("fs");
 var path = require("path");
-var firstline = require("firstline");
 var depsLoader = require('./src/dependencies.js');
+var os = require('os')
 
 
 function getBaseDir(file) {
-  return firstline(file).then(function(line) {
-    return new Promise(function(resolve, reject) {
-      var matches = line.match(/^(?:port\s+)?module\s+([^\s]+)/);
+  return new Promise(function(resolve, reject) {
+    fs.readFile(file, {encoding: 'utf8'}, function(err, content) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(content);
+      }
+    })
+  })
+    .then(function(content) {
+      var lines = content.split(os.EOL);
+      var line = ""
+      var i;
+      var inComment = false;
 
-      if (matches) {
-        // e.g. Css.Declarations
-        var moduleName = matches[1];
+      for (i = 0; i < lines.length; i++) {
+        line = lines[i];
 
-        // e.g. Css/Declarations
-        var dependencyLogicalName = moduleName.replace(/\./g, "/");
+        if (inComment) {
+          if (line.match(/^\s*-}/)) {
+            inComment = false;
+          }
 
-        // e.g. ../..
-        var backedOut = dependencyLogicalName.replace(/[^/]+/g, "..");
+          continue;
+        } else {
+          if (line.match(/^\s*$/)) {
+            continue;
+          }
 
-        // e.g. /..
-        var trimmedBackedOut = backedOut.replace(/^../, "");
+          if (line.match(/^\s*--/)) {
+            continue;
+          }
 
-        return resolve(path.normalize(path.dirname(file) + trimmedBackedOut));
-      } else if (!line.match(/^(?:port\s+)?module\s/)) {
-        // Technically you're allowed to omit the module declaration for
-        // beginner applications where it'd just be `module Main exposing (..)`
-        // If there is no module declaration, we'll assume we have one of these,
-        // and succeed with the file's directory itself.
-        //
-        // See https://github.com/rtfeldman/node-elm-compiler/pull/36
+          if (line.match(/^\s*{-/)) {
+            inComment = true;
+            continue;
+          }
+        };
 
-        return resolve(path.dirname(file));
+        return line;
       }
 
-      return reject(file + " is not a syntactically valid Elm module. Try running `elm make` on it manually to figure out what the problem is.");
+      return line;
+    })
+    .then(function(line) {
+      return new Promise(function(resolve, reject) {
+        var matches = line.match(/^(?:port\s+)?module\s+([^\s]+)/);
+
+        if (matches) {
+          // e.g. Css.Declarations
+          var moduleName = matches[1];
+
+          // e.g. Css/Declarations
+          var dependencyLogicalName = moduleName.replace(/\./g, "/");
+
+          // e.g. ../..
+          var backedOut = dependencyLogicalName.replace(/[^/]+/g, "..");
+
+          // e.g. /..
+          var trimmedBackedOut = backedOut.replace(/^../, "");
+
+          return resolve(path.normalize(path.dirname(file) + trimmedBackedOut));
+        } else if (!line.match(/^(?:port\s+)?module\s/)) {
+          // Technically you're allowed to omit the module declaration for
+          // beginner applications where it'd just be `module Main exposing (..)`
+          // If there is no module declaration, we'll assume we have one of these,
+          // and succeed with the file's directory itself.
+          //
+          // See https://github.com/rtfeldman/node-elm-compiler/pull/36
+
+          return resolve(path.dirname(file));
+        }
+
+        return reject(file + " is not a syntactically valid Elm module. Try running `elm make` on it manually to figure out what the problem is.");
+      });
     });
-  });
 }
 
 // Returns a Promise that returns a flat list of all the Elm files the given
