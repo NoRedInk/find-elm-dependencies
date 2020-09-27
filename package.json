@@ -6,7 +6,7 @@
   "scripts": {
     "prepack": "npm run build",
     "build": "rm -rf dist/ && tsc",
-    "test": "mocha test/**/*.js --require ts-node/register --watch-extensions ts",
+    "test": "mocha test/**/*.ts --require ts-node/register --watch-extensions ts",
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect"
   },
@@ -41,6 +41,7 @@
     "lodash": "^4.17.19"
   },
   "devDependencies": {
+    "@types/mocha": "^8.0.3",
     "chai": "3.5.0",
     "mocha": "^8.1.1",
     "snyk": "^1.316.1",

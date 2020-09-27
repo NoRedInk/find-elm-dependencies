@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var findAllDependencies = require("../../index.js").findAllDependencies;
+import {findAllDependencies} from "../";
 
 var entry = process.argv[2];
 

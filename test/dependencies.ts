@@ -1,6 +1,7 @@
-var expect = require("chai").expect;
-var path = require("path");
-var findAllDependencies = require(path.join(__dirname, "..")).findAllDependencies;
+import {expect} from "chai";
+import * as path from "path";
+
+import {findAllDependencies} from "../src"
 
 var fixturesDir = path.join(__dirname, "fixtures");
 

@@ -1,10 +1,11 @@
 'use strict';
 
-var _ = require("lodash");
-var fs = require("fs");
-var path = require("path");
-var firstline = require("firstline");
-var depsLoader = require('./src/dependencies.js');
+import * as _ from "lodash";
+import * as fs from "fs";
+import * as path from "path";
+import * as firstline from "firstline";
+
+import * as depsLoader from "./dependencies";
 
 
 function getBaseDir(file) {
@@ -44,7 +45,7 @@ function getBaseDir(file) {
 
 // Returns a Promise that returns a flat list of all the Elm files the given
 // Elm file depends on, based on the modules it loads via `import`.
-function findAllDependencies(file, knownDependencies, sourceDirectories, knownFiles) {
+export function findAllDependencies(file, knownDependencies?, sourceDirectories?, knownFiles?) {
   if (!knownDependencies) {
     knownDependencies = [];
   }
@@ -117,7 +118,13 @@ function getSourceDirectories(elmPackagePath) {
   });
 }
 
-function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles) {
+type DependenciesResult = {
+  file,
+  error,
+  knownDependencies
+};
+
+function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles): Promise<DependenciesResult> {
   return new Promise(function(resolve, reject) {
     // if we already know the file, return known deps since we won't learn anything
     if (knownFiles.indexOf(file) !== -1){
@@ -128,7 +135,7 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
       });
     }
     // read the imports then parse each of them
-    depsLoader.readImports(file).then(function(lines){
+    depsLoader.readImports(file).then(function(lines: string[]){
         // when lines is null, the file was not read so we just return what we know
         // and flag the error state
         if (lines === null){
@@ -187,7 +194,7 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
           // keep track of files that weren't found in our src directory
           var packagesInError = [];
 
-          var justDeps = extraDependencies.map(function(thing){
+          var justDeps = extraDependencies.map(function(thing: DependenciesResult){
             // if we had an error, we flag the file as a bad thing
             if (thing.error){
               packagesInError.push(thing.file)
@@ -209,7 +216,3 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
     }).catch(reject);
   });
 }
-
-module.exports = {
-  findAllDependencies: findAllDependencies
-};
