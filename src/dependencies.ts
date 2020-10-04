@@ -2,7 +2,7 @@ import * as fs from "fs";
 
 /* Read imports from a given file and return them
 */
-export function readImports(file){
+export function readImports(file: fs.PathLike): Promise<string[] | null> {
     return new Promise(function(resolve, reject){
         // read 60 chars at a time. roughly optimal: memory vs performance
         var stream = fs.createReadStream(file, {encoding: 'utf8', highWaterMark: 8 * 60});
@@ -14,13 +14,13 @@ export function readImports(file){
             resolve(null);
         });
 
-        stream.on('data', function(chunk){
+        stream.on('data', chunk => {
             buffer += chunk;
             // when the chunk has a newline, process each line
             if (chunk.indexOf('\n') > -1){
                 var lines = buffer.split('\n');
 
-                lines.slice(0, lines.length - 1).forEach(parser.parseLine);
+                lines.slice(0, lines.length - 1).forEach(line => parser.parseLine(line));
                 buffer = lines[lines.length - 1];
 
                 // end the stream early if we're past the imports
@@ -30,7 +30,7 @@ export function readImports(file){
                 }
             }
         });
-        stream.on('close', function (){
+        stream.on('close', () => {
             resolve(parser.getImports());
         });
     });
@@ -41,9 +41,9 @@ class Parser {
     readingImports = false;
     parsingDone = false;
     isInComment = false;
-    imports = [];
+    imports: string[] = [];
 
-    parseLine(line){
+    parseLine(line: string) {
         if (this.parsingDone) return;
 
         if (!this.moduleRead &&
@@ -79,11 +79,11 @@ class Parser {
         }
     };
 
-    getImports(){
+    getImports(): string[] {
         return this.imports;
     }
 
-    isPastImports(){
+    isPastImports(): boolean {
         return this.parsingDone;
     }
 }

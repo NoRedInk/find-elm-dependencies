@@ -3,13 +3,37 @@
 import * as _ from "lodash";
 import * as fs from "fs";
 import * as path from "path";
+// Let's ignore that the following dependency does not have types.
+//@ts-ignore
 import * as firstline from "firstline";
 
 import * as depsLoader from "./dependencies";
 
 
-function getBaseDir(file) {
-  return firstline(file).then(function(line) {
+// Returns a Promise that returns a flat list of all the Elm files the given
+// Elm file depends on, based on the modules it loads via `import`.
+export function findAllDependencies(file: string, knownDependencies: string[] = [], sourceDirectories?: string[], knownFiles: string[] = []): Promise<string[]> {
+  if (knownFiles.indexOf(file) > -1){
+    return Promise.resolve(knownDependencies);
+  }
+
+  if (sourceDirectories) {
+    return findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles).then(thing => {
+      return thing.knownDependencies;
+    });
+  } else {
+    return getBaseDir(file)
+      .then(baseDir => getElmPackageSourceDirectories(baseDir))
+      .then(newSourceDirs => {
+        return findAllDependenciesHelp(file, knownDependencies, newSourceDirs, knownFiles).then(thing => {
+          return thing.knownDependencies;
+        });
+      });
+  }
+}
+
+function getBaseDir(file: string): Promise<string> {
+  return firstline(file).then(function(line: string) {
     return new Promise(function(resolve, reject) {
       var matches = line.match(/^(?:port\s+)?module\s+([^\s]+)/);
 
@@ -43,37 +67,10 @@ function getBaseDir(file) {
   });
 }
 
-// Returns a Promise that returns a flat list of all the Elm files the given
-// Elm file depends on, based on the modules it loads via `import`.
-export function findAllDependencies(file, knownDependencies?, sourceDirectories?, knownFiles?) {
-  if (!knownDependencies) {
-    knownDependencies = [];
-  }
-
-  if (typeof knownFiles === "undefined"){
-    knownFiles = [];
-  } else if (knownFiles.indexOf(file) > -1){
-    return knownDependencies;
-  }
-
-  if (sourceDirectories) {
-    return findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles).then(function(thing){
-      return thing.knownDependencies;
-    });
-  } else {
-    return getBaseDir(file)
-      .then(getElmPackageSourceDirectories)
-      .then(function(newSourceDirs) {
-        return findAllDependenciesHelp(file, knownDependencies, newSourceDirs, knownFiles).then(function(thing){
-          return thing.knownDependencies;
-        });
-      });
-  }
-}
 
 // Given a source directory (containing top-level Elm modules), locate the
 // elm.json file that includes it and get all its source directories.
-function getElmPackageSourceDirectories(baseDir, currentDir) {
+function getElmPackageSourceDirectories(baseDir: string, currentDir?: string): string[] {
   if (typeof currentDir === "undefined") {
     baseDir = path.resolve(baseDir);
     currentDir = baseDir;
@@ -94,12 +91,12 @@ function getElmPackageSourceDirectories(baseDir, currentDir) {
   return getElmPackageSourceDirectories(baseDir, path.dirname(currentDir));
 }
 
-function isRoot(dir) {
+function isRoot(dir: string) {
   var parsedPath = path.parse(dir);
   return parsedPath.root === parsedPath.dir;
 }
 
-function getSourceDirectories(elmPackagePath) {
+function getSourceDirectories(elmPackagePath: string) {
   try {
     var elmPackage = JSON.parse(fs.readFileSync(elmPackagePath, 'utf8'));
   } catch (e) {
@@ -119,12 +116,12 @@ function getSourceDirectories(elmPackagePath) {
 }
 
 type DependenciesResult = {
-  file,
-  error,
-  knownDependencies
+  file: string,
+  error: boolean,
+  knownDependencies: string[]
 };
 
-function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, knownFiles): Promise<DependenciesResult> {
+function findAllDependenciesHelp(file: string, knownDependencies: string[], sourceDirectories: string[], knownFiles: string[]): Promise<DependenciesResult> {
   return new Promise(function(resolve, reject) {
     // if we already know the file, return known deps since we won't learn anything
     if (knownFiles.indexOf(file) !== -1){
@@ -135,7 +132,7 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
       });
     }
     // read the imports then parse each of them
-    depsLoader.readImports(file).then(function(lines: string[]){
+    depsLoader.readImports(file).then((lines) => {
         // when lines is null, the file was not read so we just return what we know
         // and flag the error state
         if (lines === null){
@@ -192,7 +189,7 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
 
         Promise.all(recursePromises).then(function(extraDependencies) {
           // keep track of files that weren't found in our src directory
-          var packagesInError = [];
+          var packagesInError: string[] = [];
 
           var justDeps = extraDependencies.map(function(thing: DependenciesResult){
             // if we had an error, we flag the file as a bad thing
@@ -203,7 +200,7 @@ function findAllDependenciesHelp(file, knownDependencies, sourceDirectories, kno
             return thing.knownDependencies;
           });
 
-          var flat = _.uniq(_.flatten(knownDependencies.concat(justDeps))).filter(function(file){
+          var flat = _.uniq(_.flatten(justDeps).concat(knownDependencies)).filter(function(file){
             return packagesInError.indexOf(file) === -1;
           });
 

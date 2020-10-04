@@ -5,6 +5,6 @@ import {findAllDependencies} from "../";
 var entry = process.argv[2];
 
 findAllDependencies(entry)
-  .then(function (dependencies) {
+  .then(dependencies => {
     console.log(dependencies);
   });
