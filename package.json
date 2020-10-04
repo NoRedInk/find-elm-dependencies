@@ -2,9 +2,11 @@
   "name": "find-elm-dependencies",
   "version": "2.0.4",
   "description": "Find elm dependencies",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "mocha test/*.js",
+    "prepack": "npm run build",
+    "build": "rm -rf dist/ && tsc",
+    "test": "mocha test/**/*.ts --require ts-node/register --watch-extensions ts",
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect"
   },
@@ -14,7 +16,7 @@
     "lib": "src"
   },
   "bin": {
-    "find-elm-dependencies": "bin/cli.js"
+    "find-elm-dependencies": "dist/bin/cli.js"
   },
   "repository": {
     "type": "git",
@@ -39,9 +41,14 @@
     "lodash": "^4.17.19"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.12",
+    "@types/lodash": "^4.14.161",
+    "@types/mocha": "^8.0.3",
     "chai": "3.5.0",
     "mocha": "^8.1.1",
-    "snyk": "^1.316.1"
+    "snyk": "^1.316.1",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
   },
   "snyk": true
 }

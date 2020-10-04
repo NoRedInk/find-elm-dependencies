@@ -31,3 +31,5 @@ node_modules
 elm-stuff
 
 test/fixtures/index.html
+
+dist/

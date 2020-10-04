@@ -1,9 +1,9 @@
-const stream = require('stream');
-const fs = require('fs');
+import * as fs from "fs";
+import * as os from "os";
 
 /* Read imports from a given file and return them
 */
-function readImports(file){
+export function readImports(file: fs.PathLike): Promise<string[] | null> {
     return new Promise(function(resolve, reject){
         // read 60 chars at a time. roughly optimal: memory vs performance
         var stream = fs.createReadStream(file, {encoding: 'utf8', highWaterMark: 8 * 60});
@@ -15,13 +15,13 @@ function readImports(file){
             resolve(null);
         });
 
-        stream.on('data', function(chunk){
+        stream.on('data', chunk => {
             buffer += chunk;
             // when the chunk has a newline, process each line
-            if (chunk.indexOf('\n') > -1){
-                var lines = buffer.split('\n');
+            if (chunk.indexOf(os.EOL) > -1){
+                var lines = buffer.split(os.EOL);
 
-                lines.slice(0, lines.length - 1).forEach(parser.parseLine.bind(parser));
+                lines.slice(0, lines.length - 1).forEach(line => parser.parseLine(line));
                 buffer = lines[lines.length - 1];
 
                 // end the stream early if we're past the imports
@@ -31,67 +31,60 @@ function readImports(file){
                 }
             }
         });
-        stream.on('close', function (){
+        stream.on('close', () => {
             resolve(parser.getImports());
         });
     });
 }
 
-function Parser(){
-    var moduleRead = false;
-    var readingImports = false;
-    var parsingDone = false;
-    var isInComment = false;
-    var imports = [];
+class Parser {
+    moduleRead = false;
+    readingImports = false;
+    parsingDone = false;
+    isInComment = false;
+    imports: string[] = [];
 
-    this.parseLine = function(line){
-        if (parsingDone) return;
+    parseLine(line: string) {
+        if (this.parsingDone) return;
 
-        if (!moduleRead &&
+        if (!this.moduleRead &&
             (line.startsWith('module ')
                 || line.startsWith('port module')
                 || line.startsWith('effect module')
             )
         ) {
-            moduleRead = true;
-        } else if (moduleRead && line.indexOf('import ') === 0){
-            readingImports = true;
+            this.moduleRead = true;
+        } else if (this.moduleRead && line.indexOf('import ') === 0){
+            this.readingImports = true;
         }
 
-        if (isInComment) {
+        if (this.isInComment) {
             if (line.endsWith('-}')){
-                isInComment = false;
+                this.isInComment = false;
             }
             return;
         }
 
-        if (readingImports){
+        if (this.readingImports){
             if (line.indexOf('import ') === 0){
-                imports.push(line);
+                this.imports.push(line);
             } else if (line.indexOf(' ') === 0 || line.trim().length === 0 || line.startsWith('--') ) {
                 // ignore lines starting with whitespace while parsing imports
                 // and start and end of comments
             } else if (line.startsWith('{-')) {
-                isInComment = true;
+                this.isInComment = true;
             } else {
                 // console.log('detected end of imports', line);
-                parsingDone = true;
+                this.parsingDone = true;
             }
         }
     };
 
-    this.getImports = function(){
-        return imports;
+    getImports(): string[] {
+        return this.imports;
     }
 
-    this.isPastImports = function(){
-        return parsingDone;
+    isPastImports(): boolean {
+        return this.parsingDone;
     }
-
-    return this;
 }
-
-
-module.exports = {
-    readImports: readImports
-};
