@@ -3,9 +3,6 @@
 import * as _ from "lodash";
 import * as fs from "fs";
 import * as path from "path";
-// Let's ignore that the following dependency does not have types.
-//@ts-ignore
-import * as firstline from "firstline";
 
 import * as depsLoader from "./dependencies";
 
@@ -33,7 +30,7 @@ export function findAllDependencies(file: string, knownDependencies: string[] = 
 }
 
 function getBaseDir(file: string): Promise<string> {
-  return firstline(file).then(function(line: string) {
+  return firstLine(file).then(function(line: string) {
     return new Promise(function(resolve, reject) {
       var matches = line.match(/^(?:port\s+)?module\s+([^\s]+)/);
 
@@ -64,6 +61,34 @@ function getBaseDir(file: string): Promise<string> {
 
       return reject(file + " is not a syntactically valid Elm module. Try running `elm make` on it manually to figure out what the problem is.");
     });
+  });
+}
+
+// This function is adapted from https://github.com/pensierinmusica/firstline, licensed under MIT by Alessandro Zanardi.
+function firstLine(path: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const lineEnding = '\n';
+    const rs = fs.createReadStream(path, {encoding: 'utf8'});
+    let accumulator = '';
+    let position = 0;
+    let index;
+    rs
+      .on('data', chunk => {
+        index = chunk.indexOf(lineEnding);
+        accumulator += chunk;
+        if (index === -1) {
+          position += chunk.length;
+        } else {
+          position += index;
+          rs.close();
+        }
+      })
+      .on('close', () => {
+        // The first character may be a byte order mark (BOM) which can cause trouble, as seen at https://github.com/pensierinmusica/firstline/issues/5.
+        // Luckily, the Elm compiler also does not accept BOMs, so we can simply ignore it here.
+        resolve(accumulator.slice(0, position))
+      } )
+      .on('error', err => reject(err));
   });
 }
 
