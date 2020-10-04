@@ -27,14 +27,8 @@ describe("#findAllDependencies", function() {
 
   it("works for a module with comments between lines with three dependencies", function () {
     return findAllDependencies(prependFixturesDir("ParentWithUnindentedMultilineComment.elm")).then((results) => {
-      // TODO: Fix this regression.
-      /*
       expect(results).to.deep.equal(
         [ "Test/ChildA.elm", "Test/ChildB.elm", "Native/Child.js" ].map(prependFixturesDir)
-      );
-      */
-      expect(results).to.deep.equal(
-        [ "Test/ChildA.elm", "Test/ChildB.elm" ].map(prependFixturesDir)
       );
     });
   });

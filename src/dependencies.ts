@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as os from "os";
 
 /* Read imports from a given file and return them
 */
@@ -17,8 +18,8 @@ export function readImports(file: fs.PathLike): Promise<string[] | null> {
         stream.on('data', chunk => {
             buffer += chunk;
             // when the chunk has a newline, process each line
-            if (chunk.indexOf('\n') > -1){
-                var lines = buffer.split('\n');
+            if (chunk.indexOf(os.EOL) > -1){
+                var lines = buffer.split(os.EOL);
 
                 lines.slice(0, lines.length - 1).forEach(line => parser.parseLine(line));
                 buffer = lines[lines.length - 1];

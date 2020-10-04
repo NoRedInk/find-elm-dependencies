@@ -2,6 +2,7 @@
 
 import * as _ from "lodash";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 import * as depsLoader from "./dependencies";
@@ -67,7 +68,7 @@ function getBaseDir(file: string): Promise<string> {
 // This function is adapted from https://github.com/pensierinmusica/firstline, licensed under MIT by Alessandro Zanardi.
 function firstLine(path: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const lineEnding = '\n';
+    const lineEnding = os.EOL;
     const rs = fs.createReadStream(path, {encoding: 'utf8'});
     let accumulator = '';
     let position = 0;
